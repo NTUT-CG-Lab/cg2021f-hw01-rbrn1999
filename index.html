@@ -22,7 +22,7 @@
 			so.addChild("排圓圈", 2, true);
 			so.addChild("點擊文字", 1, true);
 			so.addChild("顯示文字", 1, true);
-			so.addChild("時鐘效果", 1, false);
+			so.addChild("時鐘效果", 1, true);
 			so.addChild("任何 ply 格式模型", 1, false);
 	
 			so.renderModal(
@@ -55,6 +55,10 @@
 			curveSegments = 4,
 			bevelThickness = 2,
 			bevelSize = 1.5;
+
+		let hrHand, minHand, secHand,
+			hrPivot, minPivot, secPivot,
+			nob;
 
 		let font = null;
 
@@ -103,10 +107,10 @@
 
 			material = new THREE.MeshPhongMaterial({ color: 0xffffff, flatShading: true });
 			// disabled, now add textMesh to scene instead of group
-			group = new THREE.Group();
-			group.position.y = 0;
+			// group = new THREE.Group();
+			// group.position.y = 0;
 
-			scene.add(group);
+			// scene.add(group);
 
 			const loader = new THREE.TTFLoader();
 
@@ -125,12 +129,53 @@
 			plane.rotation.x = - Math.PI / 2;
 			scene.add(plane);
 
+			// Circle plane for clock
 			const circle = new THREE.Mesh(
-				new THREE.CircleGeometry(hover/2 + size, 24),
-				new THREE.MeshBasicMaterial({ color: 0xd37788, opacity: 0.7, transparent: true })
+				new THREE.CircleGeometry(hover/2 + size, 32),
+				new THREE.MeshBasicMaterial({ color: 0xEFF5F5, opacity: 1, transparent: true })
 			);
 			circle.position.set(0, hover + size / 2, -30);
 			scene.add(circle);
+			// pivot nob
+			nob = new THREE.Mesh(
+				new THREE.CircleGeometry(4),
+				new THREE.MeshBasicMaterial({ color: 0xC52219, opacity: 1, transparent: true })
+			);
+			nob.position.set(0, hover + size / 2, 32);
+			scene.add(nob);
+			// Clock hands
+			let handLength = hover / 3;
+			hrHand = new THREE.Mesh(
+				new THREE.PlaneGeometry(5, handLength),
+				new THREE.MeshBasicMaterial({ color: 0x0D0D0D, opacity: 1, transparent: true })
+			);
+			hrHand.applyMatrix4( new THREE.Matrix4().makeTranslation( 0, handLength/2, 0 ) );
+			hrPivot = new THREE.Object3D();
+			hrPivot.position.set(0, (hover + size / 2), 30);
+			hrPivot.add( hrHand );
+			scene.add( hrPivot );
+
+			handLength = hover / 2.2;
+			minHand = new THREE.Mesh(
+				new THREE.PlaneGeometry(3, handLength),
+				new THREE.MeshBasicMaterial({ color: 0x0D0D0D, opacity: 1, transparent: true })
+			);
+			minHand.applyMatrix4( new THREE.Matrix4().makeTranslation( 0, handLength/2, 0 ) );
+			minPivot = new THREE.Object3D();
+			minPivot.position.set(0, (hover + size / 2), 30);
+			minPivot.add( minHand );
+			scene.add( minPivot );
+
+			handLength = hover / 2.2;
+			secHand = new THREE.Mesh(
+				new THREE.PlaneGeometry(1, handLength),
+				new THREE.MeshBasicMaterial({ color: 0xE8271D, opacity: 1, transparent: true })
+			);
+			secHand.applyMatrix4( new THREE.Matrix4().makeTranslation( 0, handLength/2, 0 ) );
+			secPivot = new THREE.Object3D();
+			secPivot.position.set(0, (hover + size / 2), 30);
+			secPivot.add( secHand );
+			scene.add( secPivot );
 			// RENDERER
 
 			renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -153,10 +198,6 @@
 
 
 		function animate() {
-			requestAnimationFrame( animate );
-			// group.rotation.y += ( targetRotation - group.rotation.y ) * 0.05;
-
-			// camera.lookAt( cameraTarget );
 			raycaster.setFromCamera( mouse, camera );
 
 			// Test raycaster intersection
@@ -167,8 +208,15 @@
 			// 	intersects[i].object.material.color.setHSL(Math.random(), 1, 0.5);
 
 			// }
-
+			// Clock Hand update
+			let date = new Date();
+			let sec = date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds();
+			let msec = date.getUTCMilliseconds();
+			hrPivot.rotation.z = -2 * Math.PI * (sec / 43200);
+			minPivot.rotation.z = -2 * Math.PI * ((sec*1000+msec) / (3600 * 1000));
+			secPivot.rotation.z = nob.rotation.z = -2 * Math.PI * ((sec * 1000 + msec)/(60 * 1000));
 			renderer.render( scene, camera );
+			requestAnimationFrame( animate );
 		}
 
 		function onWindowResize() {
